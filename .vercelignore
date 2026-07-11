@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+download
+zaitun-cpanel
+tool-results
+upload
+db
+*.log
+scripts
+.zscripts
+Caddyfile
+*.bak
+.env.local
