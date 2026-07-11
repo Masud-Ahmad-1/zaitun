@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   if (process.env.TURSO_DATABASE_URL) {
     const { createClient } = require('@libsql/client') as { createClient: Function }
-    const { PrismaLibSQL } = require('@prisma/adapter-libsql') as { PrismaLibSQL: any }
+    const { PrismaLibSql } = require('@prisma/adapter-libsql')
 
     // Create libsql client — confirmed working in Vercel
     const libsql = createClient({
@@ -16,7 +16,7 @@ function createPrismaClient(): PrismaClient {
     })
 
     // Create adapter wrapping the libsql client
-    const adapter = new PrismaLibSQL(libsql)
+    const adapter = new PrismaLibSql(libsql)
 
     // Pass adapter to Prisma — DATABASE_URL must be valid for schema validation
     return new PrismaClient({ adapter })
