@@ -5,14 +5,20 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient(): PrismaClient {
-  // In Vercel: TURSO_DATABASE_URL is set, adapter creates the connection
-  // In local dev: TURSO_DATABASE_URL is not set, falls back to local SQLite
   if (process.env.TURSO_DATABASE_URL) {
-    const libsql = require('@libsql/client').createClient({
+    const { createClient } = require('@libsql/client') as { createClient: Function }
+    const { PrismaLibSQL } = require('@prisma/adapter-libsql') as { PrismaLibSQL: any }
+
+    // Create libsql client — confirmed working in Vercel
+    const libsql = createClient({
       url: process.env.TURSO_DATABASE_URL,
       authToken: process.env.TURSO_AUTH_TOKEN,
     })
-    const adapter = new (require('@prisma/adapter-libsql').PrismaLibSQL)(libsql)
+
+    // Create adapter wrapping the libsql client
+    const adapter = new PrismaLibSQL(libsql)
+
+    // Pass adapter to Prisma — DATABASE_URL must be valid for schema validation
     return new PrismaClient({ adapter })
   }
 
