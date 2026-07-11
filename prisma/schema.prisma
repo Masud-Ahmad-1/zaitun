@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "libsql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String?
+  image     String?
+  role      String   @default("member") // admin, member
+  locale    String   @default("en")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdTrees         FamilyTree[]          @relation("CreatorTree")
+  familyTreeMemberships FamilyTreeMember[]
+}
+
+model FamilyTree {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isPrivate   Boolean  @default(true)
+  inviteCode  String   @unique
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator     User               @relation("CreatorTree", fields: [createdBy], references: [id])
+  members       FamilyTreeMember[]
+  persons       Person[]
+  relationships  Relationship[]
+  diaryEntries   DiaryEntry[]
+}
+
+model FamilyTreeMember {
+  id        String   @id @default(cuid())
+  treeId    String
+  userId    String
+  role      String   @default("member")
+  joinedAt  DateTime @default(now())
+
+  tree      FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, userId])
+}
+
+model Person {
+  id          String   @id @default(cuid())
+  treeId      String
+  firstName   String
+  lastName    String?
+  gender      String?
+  birthDate   String?
+  deathDate   String?
+  photo       String?
+  bio         String?
+  occupation  String?
+  isDeceased  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tree         FamilyTree    @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  relAsPerson1  Relationship[] @relation("Rel1")
+  relAsPerson2  Relationship[] @relation("Rel2")
+  diaryEntries  DiaryEntry[]
+
+  @@index([treeId])
+}
+
+model Relationship {
+  id         String   @id @default(cuid())
+  treeId     String
+  person1Id  String
+  person2Id  String
+  type       String
+  createdAt  DateTime @default(now())
+
+  tree    FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  person1 Person     @relation("Rel1", fields: [person1Id], references: [id], onDelete: Cascade)
+  person2 Person     @relation("Rel2", fields: [person2Id], references: [id], onDelete: Cascade)
+
+  @@unique([person1Id, person2Id, type])
+  @@index([treeId])
+}
+
+model DiaryEntry {
+  id        String   @id @default(cuid())
+  treeId    String
+  personId  String
+  date      String
+  title     String
+  content   String
+  privacy   String   @default("family") // private, family, public
+  tags      String   @default("") // comma-separated
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tree   FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  person Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([treeId, personId])
+  @@index([treeId, date])
+}
